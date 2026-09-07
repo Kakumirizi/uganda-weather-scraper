@@ -6,8 +6,10 @@ data/latest.geojson
 data/latest.gpkg
 logs/
 
+map/uganda_weather_map.html
+
 # keep in git: weather_scraper.py, run.ps1, README.md, data/observations.csv,
-# data/stations.csv  (the accumulating record)
+# data/stations.csv  (the accumulating record), map/ inputs
 
 __pycache__/
 *.pyc

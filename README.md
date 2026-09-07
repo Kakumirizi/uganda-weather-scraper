@@ -80,3 +80,18 @@ Times: `epoch_ms` (source), `ts_utc`, `ts_eat` (UTC+3). `age_hours` = reading ag
 python weather_scraper.py                    # uses ./data and ./logs
 python weather_scraper.py --template waterlevel   # the 13 river gauges (separate dataset)
 ```
+
+## Map
+
+`map/build_map.py` turns `data/latest.json` into a standalone interactive Leaflet
+map (`map/uganda_weather_map.html`) — stations plotted on the Uganda outline,
+coloured by temperature / humidity / wind / reporting status, click for full
+readings. Pulls only Leaflet JS + fonts from a CDN; everything else is inlined.
+
+```powershell
+python map/build_map.py        # regenerate after a scrape
+```
+
+Publish the HTML as a Claude artifact, or serve `map/` over any static file server.
+Inputs (`leaflet-1.9.4.css`, `uganda_outline.geojson`) are vendored; the generated
+HTML is gitignored.
