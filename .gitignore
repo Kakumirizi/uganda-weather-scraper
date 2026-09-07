@@ -1,0 +1,14 @@
+# raw run artefacts — regenerated every run, not worth versioning
+data/snapshots/
+data/latest.json
+data/latest.csv
+data/latest.geojson
+data/latest.gpkg
+logs/
+
+# keep in git: weather_scraper.py, run.ps1, README.md, data/observations.csv,
+# data/stations.csv  (the accumulating record)
+
+__pycache__/
+*.pyc
+.tmp_*
