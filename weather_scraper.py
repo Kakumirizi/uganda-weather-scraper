@@ -107,7 +107,10 @@ def parse_list(html: str) -> dict:
         }
         for key, cell in zip(METRICS, cells[3:9]):
             sk = SORTKEY_RE.search(cell)
-            rec[key] = _clean_num(sk.group(1)) if sk else _clean_num(SORTKEY_RE.sub("", cell))
+            # sortkey span carries the full-precision value; otherwise read the
+            # visible text -- strip tags first so jsessionid hex in a status-icon
+            # <img> src can't be misread as a number.
+            rec[key] = _clean_num(sk.group(1)) if sk else _clean_num(_text(cell))
         out[node_id] = rec
     return out
 
