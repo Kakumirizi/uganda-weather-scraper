@@ -197,7 +197,7 @@ const reduceMotion = matchMedia("(prefers-reduced-motion:reduce)").matches;
 
 const RAMPS = {
   t:    {label:"Air temperature", unit:"\u00b0C", dec:1,
-         stops:[[12,"#3b6ea5"],[16,"#5b9aa0"],[20,"#b8a862"],[24,"#d1823f"],[28,"#b34a33"]]},
+         stops:[[14,"#3b6ea5"],[19,"#5b9aa0"],[24,"#b8a862"],[29,"#d1823f"],[34,"#b34a33"]]},
   rh:   {label:"Relative humidity", unit:"%", dec:0,
          stops:[[20,"#ece4d4"],[60,"#7fb0c0"],[100,"#25607e"]]},
   wind: {label:"Wind speed", unit:"km/h", dec:1,
@@ -223,14 +223,15 @@ function ramp(stops,v){
 }
 const flags = s => s.flags ? s.flags.split(";") : [];
 function metricVal(s,mode){
-  if(mode==="t")   return (s.t==null||flags(s).includes("temp_sensor_suspect")) ? null : s.t;
-  if(mode==="rh")  return (s.rh==null||s.rh>=999||flags(s).includes("rh_sensor_suspect")) ? null : s.rh;
-  if(mode==="wind")return s.wind==null ? null : s.wind;
+  const f=flags(s);
+  if(mode==="t")   return (s.t==null||f.includes("temp_sensor_suspect")||f.includes("temp_rh_dead")) ? null : s.t;
+  if(mode==="rh")  return (s.rh==null||s.rh>=999||f.includes("rh_sensor_suspect")||f.includes("temp_rh_dead")) ? null : s.rh;
+  if(mode==="wind")return (s.wind==null||f.includes("wind_sensor_suspect")) ? null : s.wind;
   return null;
 }
 function statusOf(s){
   const f=flags(s);
-  if(f.includes("all_zero_dead")||f.includes("no_timestamp")||s.age==null||s.age>24*30) return "dead";
+  if(f.includes("all_zero_dead")||f.includes("temp_rh_dead")||f.includes("no_timestamp")||s.age==null||s.age>24*30) return "dead";
   if(s.age<=3) return "fresh";
   if(s.age<=24) return "delayed";
   return "stale";
