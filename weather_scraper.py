@@ -157,6 +157,13 @@ def enrich(rec: dict, now_utc: dt.datetime) -> dict:
     core = [rec.get("t_air_c"), rec.get("rh_pct"), rec.get("wind_kmh")]
     if all(v == 0 for v in core) and rec.get("rain_mm") in (0, None):
         flags.append("all_zero_dead")
+    elif rec.get("t_air_c") == 0 and rec.get("rh_pct") == 0:
+        flags.append("temp_rh_dead")      # T and RH both pinned at 0 -> sensors offline
+    for k in ("wind_kmh", "wind_max_kmh"):
+        w = rec.get(k)
+        if w is not None and w > 100:
+            flags.append("wind_sensor_suspect")   # >100 km/h is not credible for this network
+            break
 
     rec["ts_utc"] = ts_utc.isoformat() if ts_utc else None
     rec["ts_eat"] = ts_eat.isoformat() if ts_eat else None
@@ -291,8 +298,8 @@ def main() -> int:
         raise last
 
     try:
-        list_html = fetch(f"{args.base}/livedata/list.jsf?template={args.template}")
-        map_html = fetch(f"{args.base}/livedata/map.jsf?template={args.template}")
+        list_html = fetch(f"{args.base}/livedata/list.jsf?template={args.template}&units=metric&locale=en")
+        map_html = fetch(f"{args.base}/livedata/map.jsf?template={args.template}&units=metric&locale=en")
     except Exception as e:  # noqa: BLE001
         log_line(log_path, f"FETCH FAILED: {e!r}")
         print(f"fetch failed: {e}", file=sys.stderr)

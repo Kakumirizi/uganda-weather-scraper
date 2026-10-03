@@ -206,7 +206,7 @@ const RAMPS = {
 const FLAG_LABEL = {
   stale_gt_24h:"stale >24h", delayed_gt_3h:"delayed >3h",
   rh_sensor_suspect:"RH sensor suspect", temp_sensor_suspect:"temp sensor suspect",
-  all_zero_dead:"offline", no_timestamp:"no timestamp",
+  all_zero_dead:"offline", temp_rh_dead:"T/RH sensors offline", wind_sensor_suspect:"wind sensor suspect", no_timestamp:"no timestamp",
 };
 
 const h2r = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
