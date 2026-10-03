@@ -14,7 +14,7 @@ Each run (python weather_scraper.py):
   7. append one line to              -> logs/scrape.log
 
   python weather_scraper.py --export            # monthly CSVs + stations.csv -> data/exports/
-  python weather_scraper.py --export 2026-10    # one month only
+  python weather_scraper.py --export 2026-09,2026-10   # chosen months only
 
 Design notes
   * The portal only exposes each station's LATEST value, so a missed poll is lost for good.
@@ -378,15 +378,18 @@ def write_gpkg(path: Path, records: list[dict], log_path: Path):
         log_line(log_path, f"gpkg skipped: {e}")
 
 
-def export_csvs(con, datadir: Path, month: str | None):
+def export_csvs(con, datadir: Path, months: list[str] | None):
     outdir = datadir / "exports"
-    months = [month] if month else [r[0] for r in con.execute(
+    months = months or [r[0] for r in con.execute(
         "SELECT DISTINCT substr(ts_eat,1,7) FROM observations WHERE ts_eat IS NOT NULL ORDER BY 1")]
     for mth in months:
         rows = con.execute(
             "SELECT o.*, s.latitude, s.longitude FROM observations o "
             "LEFT JOIN stations s USING(node_id) WHERE substr(o.ts_eat,1,7)=? "
             "ORDER BY o.epoch_ms, o.node_id", (mth,)).fetchall()
+        if not rows:
+            print(f"skipped {mth}: no rows")
+            continue
         _atomic_write(outdir / f"observations_{mth}.csv", _csv_bytes(EXPORT_OBS_COLS, [dict(r) for r in rows]))
         print(f"exported {mth}: {len(rows)} rows")
     st = con.execute("SELECT * FROM stations ORDER BY node_id").fetchall()
@@ -440,7 +443,7 @@ def main() -> int:
     ap.add_argument("--min-station-ratio", type=float, default=0.9,
                     help="fail if fewer than this fraction of recently seen stations parse")
     ap.add_argument("--force", action="store_true", help="skip the station-count sanity check")
-    ap.add_argument("--export", nargs="?", const="ALL", metavar="YYYY-MM",
+    ap.add_argument("--export", nargs="?", const="ALL", metavar="YYYY-MM[,YYYY-MM...]",
                     help="write monthly CSV exports (+ stations.csv) and exit")
     args = ap.parse_args()
 
@@ -456,7 +459,7 @@ def main() -> int:
     try:
         if args.export:
             con = open_db(db_path)
-            export_csvs(con, datadir, None if args.export == "ALL" else args.export)
+            export_csvs(con, datadir, None if args.export == "ALL" else [m for m in args.export.split(",") if m])
             return 0
         return run_once(args, datadir, log_path, db_path)
     finally:

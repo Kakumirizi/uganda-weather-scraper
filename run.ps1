@@ -4,10 +4,13 @@
 # any stderr line from a native command into a terminating error, which (a) masked the scraper's
 # own exit code as 99 and (b) would flag a successful run as failed over a harmless warning.
 # stdout/stderr go to files via Start-Process; only $proc.ExitCode decides success.
+# Usage: run.ps1  ->  weather_scraper.py, log: logs/run.log
+#                    run.ps1 -Target publish_data.py -LogName publish.log   -> daily data publish
+param([string]$Target = "weather_scraper.py", [string]$LogName = "run.log")
 $root   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$script = Join-Path $root "weather_scraper.py"
+$script = Join-Path $root $Target
 $logdir = Join-Path $root "logs"
-$runlog = Join-Path $logdir "run.log"
+$runlog = Join-Path $logdir $LogName
 New-Item -ItemType Directory -Force -Path $logdir | Out-Null
 
 function Write-RunLog([string]$line) {
@@ -25,8 +28,9 @@ else {
 }
 if (-not $python) { Write-RunLog "exit=98  python not found (tried py.exe, python.exe)"; exit 98 }
 
-$outFile = Join-Path $logdir "last_stdout.txt"
-$errFile = Join-Path $logdir "last_stderr.txt"
+$stem    = [IO.Path]::GetFileNameWithoutExtension($LogName)
+$outFile = Join-Path $logdir "$stem.last_stdout.txt"
+$errFile = Join-Path $logdir "$stem.last_stderr.txt"
 try {
     $proc = Start-Process -FilePath $python -ArgumentList ($pyArgs + @("`"$script`"")) `
         -WorkingDirectory $root -NoNewWindow -Wait -PassThru `

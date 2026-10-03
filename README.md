@@ -38,6 +38,32 @@ schtasks /Change /TN UgandaWeatherScraper /DISABLE                              
 A run also takes an exclusive file lock (`data/.lock`); a concurrent manual run exits cleanly with
 `SKIPPED` instead of racing the scheduled one.
 
+### Daily data publish (GitHub)
+
+Windows Task **`UgandaWeatherPublish`**, once a day at 13:00 (catches up after sleep; installed with
+`scheduler\install_task.ps1 -Publish`). It runs `publish_data.py` through `run.ps1 -Target publish_data.py
+-LogName publish.log`:
+
+1. exports the previous and current month (EAT) to `data/exports/*.csv` and refreshes `data/stations.csv`
+2. commits **only** those paths, if they changed (`Data export YYYY-MM-DD: N readings in ...`)
+3. pushes `main` to `origin` when the local branch is ahead
+
+Guard rails: no force-push, no rebase or merge (a diverged remote fails with exit 3 and is left for you to
+resolve), refuses to run off `main` or without an `origin`, never stages anything outside the data paths.
+A failed push keeps the commit locally and is retried by the next run. Credentials come from your Git
+Credential Manager (the task runs as you, while you are logged on). Results: `logs\publish.log`, and the
+task's *Last Run Result* (0 = ok or nothing to do, 1 export failed, 2 git precondition, 3 commit/push failed).
+
+```powershell
+schtasks /Run /TN UgandaWeatherPublish          # publish now
+python publish_data.py                          # same thing, from a terminal
+schtasks /Change /TN UgandaWeatherPublish /DISABLE
+```
+
+Repo growth: each day rewrites the current month's CSV (about 6 MB per month of data), so history grows
+roughly 1.5 MB per day before git packs the deltas. If that becomes a problem, switch the exports to one
+immutable file per day.
+
 ## Data (`data/`)
 
 | Path | Git | Contents |
