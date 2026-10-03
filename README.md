@@ -101,10 +101,44 @@ Times: `epoch_ms` (source), `ts_utc`, `ts_eat` (UTC+3).
 
 ## Map
 
-`python map/build_map.py` → `map/uganda_weather_map.html` (standalone Leaflet map: stations on the
-Uganda outline, coloured by temperature / humidity / wind / reporting status; click for readings and
-delayed-sensor notes). Ages are relative to the scrape time shown in the page, so a published copy
-is a snapshot — rebuild and republish to refresh. Stations without coordinates are omitted and
-reported by the build.
+`python map/build_map.py` → `map/uganda_weather_map.html`: a standalone Leaflet map. Stations are
+coloured by temperature / humidity / wind / reporting status; click for readings and delayed-sensor
+notes. Ages are relative to the scrape time shown in the page, so a published copy is a snapshot:
+rebuild and republish to refresh. Stations without coordinates are omitted and reported by the build.
+
+### Base layers (top-left "Map layers" card)
+
+| Layer | Source | Default |
+|---|---|---|
+| Lakes + names | Natural Earth 10 m lakes (public domain) | on |
+| Rivers + names | Natural Earth 10 m river centrelines, cut where they cross lakes | on |
+| Major roads | `AllRoads.shp`, `DESCRIP = "Major road"` (2,897 segments) | on |
+| Secondary roads | `AllRoads.shp`, `DESCRIP = "Secondary road"` (10,297 segments) | off |
+
+Natural Earth rivers are **coarse** (Nile system, Kagera, Semliki); Lake George and smaller rivers
+(Kafu, Aswa, Katonga...) are absent. Prepared once into small files in `map/layers/` (about 0.6 MB):
+
+```powershell
+python map/prepare_layers.py [--roads-zip D:/DATAs/Roads.zip]   # downloads Natural Earth into data/_src/
+```
+
+The road shapes come from a local file whose origin is not recorded (EPSG:21096, reprojected). Keep the
+repo and the published artifact private unless you have confirmed you may share them.
+
+### CSV download ("Download last 7 days (CSV)", left rail)
+
+One row per reading, every station that reported in the 7 days before the snapshot, read from
+`data/weather.db` at build time and embedded in the page. The CSV itself is assembled in the browser.
+
+Columns: `node_id, station_code, station_name, latitude, longitude, time_eat, time_utc, t_air_c, rain_mm,
+solar_wm2, rh_pct, wind_kmh, wind_max_kmh, delayed_metrics, quality_flags`. UTF-8 with a BOM (Excel),
+CRLF, empty cell = no value, file name `uganda_weather_7d_<snapshot UTC>.csv`.
+
+- Readings are exported as stored: sentinel values (e.g. `rh_pct = 999`) stay and are marked in `quality_flags`.
+- `latitude`/`longitude` are the portal's fuzzed, fixed-per-station positions (not survey grade).
+- Text from the portal is neutralised against spreadsheet formula injection (a leading `=`, `+`, `-`, `@`
+  gets a `'` prefix).
+- In the published artifact the save needs the viewer's confirmation (the page declares the `downloads`
+  capability); the button is hidden where saving is unavailable. A local copy of the HTML downloads normally.
 
 Publish the HTML as a Claude artifact, or serve `map/` over any static file server.
