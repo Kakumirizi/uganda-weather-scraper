@@ -8,14 +8,26 @@ HERE = pathlib.Path(__file__).parent
 ROOT = HERE.parent
 latest = json.loads((ROOT / "data" / "latest.json").read_text(encoding="utf-8"))
 scraped = latest["scraped_at_utc"]
+no_coords = [s for s in latest["stations"] if s.get("latitude") is None or s.get("longitude") is None]
+if no_coords:
+    print(f"note: {len(no_coords)} station(s) have no coordinates and are omitted from the map:",
+          ", ".join(s["station_name"] for s in no_coords))
 stations = [
     {"id": s["node_id"], "code": s["station_code"], "name": s["station_name"],
      "lat": round(s["latitude"], 5), "lon": round(s["longitude"], 5),
+     "dl": s.get("delayed_metrics") or "",
      "t": s["t_air_c"], "rain": s["rain_mm"], "solar": s["solar_wm2"], "rh": s["rh_pct"],
      "wind": s["wind_kmh"], "wmax": s["wind_max_kmh"],
      "eat": s["ts_eat"], "age": s["age_hours"], "flags": s["quality_flags"]}
     for s in latest["stations"]
+    if s.get("latitude") is not None and s.get("longitude") is not None
 ]
+def script_json(obj):
+    """JSON safe inside <script>: escape < (and U+2028/9) so a station name containing </script> cannot break out."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
+
+
 uganda = (HERE / "uganda_outline.geojson").read_text(encoding="utf-8").strip()
 leaflet_css = (HERE / "leaflet-1.9.4.css").read_text(encoding="utf-8")
 
@@ -192,7 +204,9 @@ const STATIONS = __STATIONS__;
 const UGANDA = __UGANDA__;
 const SCRAPED = "__SCRAPED__";
 
+const esc = v => String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NOW = new Date(SCRAPED).getTime();   // every age is relative to scrape time
 const reduceMotion = matchMedia("(prefers-reduced-motion:reduce)").matches;
 
 const RAMPS = {
@@ -206,7 +220,7 @@ const RAMPS = {
 const FLAG_LABEL = {
   stale_gt_24h:"stale >24h", delayed_gt_3h:"delayed >3h",
   rh_sensor_suspect:"RH sensor suspect", temp_sensor_suspect:"temp sensor suspect",
-  all_zero_dead:"offline", temp_rh_dead:"T/RH sensors offline", wind_sensor_suspect:"wind sensor suspect", no_timestamp:"no timestamp",
+  all_zero_dead:"offline", temp_rh_dead:"T/RH sensors offline", wind_sensor_suspect:"wind sensor suspect", no_timestamp:"no timestamp", future_timestamp:"timestamp in the future",
 };
 
 const h2r = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
@@ -240,15 +254,15 @@ const STATUS_COLOR = {fresh:"--s-fresh",delayed:"--s-delayed",stale:"--s-stale",
 
 // ---- feed freshness banner
 const times = STATIONS.map(s=>s.eat).filter(Boolean).map(t=>new Date(t).getTime())
-  .filter(t=>Date.now()-t < 1000*3600*24*40);   // ignore stations dead for weeks
+  .filter(t=>NOW-t < 1000*3600*24*40);   // ignore stations dead for weeks
 const latestFeed = times.length ? new Date(Math.max(...times)) : null;
 const fmtEAT = d => d.toLocaleString("en-GB",{timeZone:"Africa/Kampala",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
 document.getElementById("scraped").textContent = fmtEAT(new Date(SCRAPED)) + " EAT";
 if(latestFeed){
-  const hrs = (Date.now()-latestFeed.getTime())/3.6e6;
+  const hrs = (NOW-latestFeed.getTime())/3.6e6;
   document.getElementById("feednote").innerHTML =
-    `Newest reading anywhere in the feed is <b>${fmtEAT(latestFeed)} EAT</b>` +
-    (hrs>6 ? ` \u2014 about ${Math.round(hrs)} h ago. The network is not reporting live right now; every marker is a last-known value.` : ".");
+    `Newest reading in the feed: <b>${fmtEAT(latestFeed)} EAT</b>` +
+    (hrs>6 ? ` \u2014 ${Math.round(hrs)} h before this snapshot. The network was not reporting live when it was taken; every marker is a last-known value.` : " (as of this snapshot).");
 }
 
 // ---- map
@@ -299,13 +313,15 @@ function popupHTML(s){
       : d.toLocaleDateString("en-GB",{month:"short",year:"numeric"});
     when = `${fmtEAT(d)} EAT \u00b7 ${age}`;
   }
-  const chips = f.map(x=>{
+  const DLAB={t_air_c:"air temp",rain_mm:"rain",solar_wm2:"solar",rh_pct:"humidity",wind_kmh:"wind",wind_max_kmh:"gust"};
+  const dl = (s.dl||"").split(";").filter(Boolean).map(m=>`<span class="warn">${esc(DLAB[m]||m)} delayed</span>`).join("");
+  const chips = dl + f.map(x=>{
     const warn = x.includes("suspect")||x==="all_zero_dead"||x==="no_timestamp";
-    return `<span class="${warn?"warn":""}">${FLAG_LABEL[x]||x}</span>`;
+    return `<span class="${warn?"warn":""}">${esc(FLAG_LABEL[x]||x)}</span>`;
   }).join("");
   return `<div class="pop">
-    <h4>${s.name}</h4>
-    <div class="pmeta mono">node ${s.id} \u00b7 code ${s.code}</div>
+    <h4>${esc(s.name)}</h4>
+    <div class="pmeta mono">node ${s.id} \u00b7 code ${esc(s.code)}</div>
     <div class="pmeta mono">${Math.abs(s.lat).toFixed(3)}\u00b0 ${NS}, ${Math.abs(s.lon).toFixed(3)}\u00b0 ${EW}</div>
     <dl class="pgrid">
       ${row("Air temp", s.t==null?null:s.t.toFixed(1), "\u00b0C", f.includes("temp_sensor_suspect"))}
@@ -395,8 +411,8 @@ function renderList(filter=""){
     .sort((a,b)=>a.name.localeCompare(b.name));
   listEl.innerHTML = rows.map(s=>
     `<button class="st" data-id="${s.id}" aria-current="${s.id===selected}">
-      ${markerDot(s)}<span class="nm">${s.name}</span>${valueTag(s)}
-    </button>`).join("") || `<div style="padding:16px;color:var(--muted);font-size:12px">No stations match \u201c${filter}\u201d</div>`;
+      ${markerDot(s)}<span class="nm">${esc(s.name)}</span>${valueTag(s)}
+    </button>`).join("") || `<div style="padding:16px;color:var(--muted);font-size:12px">No stations match \u201c${esc(filter)}\u201d</div>`;
   listEl.querySelectorAll(".st").forEach(el=>
     el.addEventListener("click",()=>select(+el.dataset.id,true)));
 }
@@ -489,7 +505,7 @@ html = f"""<title>Uganda Weather Stations</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-{JS.replace("__STATIONS__", json.dumps(stations, separators=(",", ":"))).replace("__UGANDA__", uganda).replace("__SCRAPED__", scraped)}
+{JS.replace("__STATIONS__", script_json(stations)).replace("__UGANDA__", script_json(json.loads(uganda))).replace("__SCRAPED__", scraped)}
 </script>
 """
 
