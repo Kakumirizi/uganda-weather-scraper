@@ -1,0 +1,2 @@
+node_id,station_code,station_name,latitude,longitude,epoch_ms,ts_utc,ts_eat,t_air_c,rain_mm,solar_wm2,rh_pct,wind_kmh,wind_max_kmh,delayed_metrics,quality_flags,first_seen_utc,last_seen_utc,revisions
+28705,518273,Napak IririHCIII,2.1184446885062522,34.22445454255083,1752217200000,2025-07-11T07:00:00+00:00,2025-07-11T10:00:00+03:00,20.62,0.0,189.1814,81.49,7.230487,11.47814,,,2026-09-07T18:14:50Z,2026-10-03T08:57:05Z,0

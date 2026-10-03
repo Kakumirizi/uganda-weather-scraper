@@ -1,0 +1,2 @@
+node_id,station_code,station_name,latitude,longitude,epoch_ms,ts_utc,ts_eat,t_air_c,rain_mm,solar_wm2,rh_pct,wind_kmh,wind_max_kmh,delayed_metrics,quality_flags,first_seen_utc,last_seen_utc,revisions
+27791,511029,Kaliro KaliroTC1,0.9130444537866506,33.49701009545623,1765947600000,2025-12-17T05:00:00+00:00,2025-12-17T08:00:00+03:00,0.0,0.0,0.0,0.0,0.0,0.0,,all_zero_dead,2026-09-07T18:14:50Z,2026-09-23T17:26:03Z,0

@@ -1,0 +1,3 @@
+node_id,station_code,station_name,latitude,longitude,epoch_ms,ts_utc,ts_eat,t_air_c,rain_mm,solar_wm2,rh_pct,wind_kmh,wind_max_kmh,delayed_metrics,quality_flags,first_seen_utc,last_seen_utc,revisions
+15657,45702,Kaberamaido Ochero,1.6811486047615825,33.01759955895953,1723818148000,2024-08-16T14:22:28+00:00,2024-08-16T17:22:28+03:00,0.0,0.0,0.0,0.0,0.0,0.0,,all_zero_dead,2026-09-07T18:14:50Z,2026-10-03T08:57:05Z,0
+4277,45714,Buyende Bugaya,0.6003331367275938,33.31650585876822,1723832963000,2024-08-16T18:29:23+00:00,2024-08-16T21:29:23+03:00,0.0,0.0,0.0,0.0,0.0,0.0,,all_zero_dead,2026-09-07T18:14:50Z,2026-10-03T08:57:05Z,0

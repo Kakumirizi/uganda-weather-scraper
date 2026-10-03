@@ -1,0 +1,2 @@
+node_id,station_code,station_name,latitude,longitude,epoch_ms,ts_utc,ts_eat,t_air_c,rain_mm,solar_wm2,rh_pct,wind_kmh,wind_max_kmh,delayed_metrics,quality_flags,first_seen_utc,last_seen_utc,revisions
+30443,45693,Kaliro Nawaikoke2HCIII,1.7703660619854162,33.1516223342065,1741254738000,2025-03-06T09:52:18+00:00,2025-03-06T12:52:18+03:00,,,,,,0.0,t_air_c;rain_mm;solar_wm2;rh_pct;wind_kmh,,2026-09-07T18:14:50Z,2026-10-03T08:57:05Z,1

@@ -1,0 +1,2 @@
+node_id,station_code,station_name,latitude,longitude,epoch_ms,ts_utc,ts_eat,t_air_c,rain_mm,solar_wm2,rh_pct,wind_kmh,wind_max_kmh,delayed_metrics,quality_flags,first_seen_utc,last_seen_utc,revisions
+28985,518277,Abim AbimSS,2.713158746988787,33.656524363376086,1737510300000,2025-01-22T01:45:00+00:00,2025-01-22T04:45:00+03:00,21.48,0.0,0.0,77.88,4.013123,,,,2026-09-07T18:14:50Z,2026-10-03T08:57:05Z,0

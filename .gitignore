@@ -8,9 +8,14 @@ logs/
 
 map/uganda_weather_map.html
 
-# keep in git: weather_scraper.py, run.ps1, README.md, data/observations.csv,
-# data/stations.csv  (the accumulating record), map/ inputs
+# keep in git: code, scheduler/, README, map/ inputs, and the record: data/exports/*.csv + data/stations.csv
+# (data/weather.db is the live store and is NOT tracked; regenerate exports with --export)
 
 __pycache__/
 *.pyc
 .tmp_*
+
+# local safety copies from the 2026-10-03 hardening
+backup/
+data/weather.db*
+data/.lock
